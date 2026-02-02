@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本之旅 Itinerary</title>
+    <style>
+        /* --- 基礎設定 --- */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.25);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+            --text-color: #333;
+            --accent-color: #ff6b6b;
+            --active-color: #ff4757;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Helvetica Neue", Helvetica, "PingFang TC", "Microsoft JhengHei", sans-serif;
+            background-image: url('12345.PNG'); 
+            
+            /* 修改背景設定：縮小一點，設定寬度100%自動調整高度 */
+            background-size: 100% auto; 
+            background-repeat: no-repeat;
+            background-position: center top; 
+            background-attachment: fixed; /* 讓背景固定不隨捲動 */
+            background-color: #f0f0f0; /* 背景圖以外的地方顯示淺灰，避免全白太刺眼 */
+
+            min-height: 100vh;
+            color: var(--text-color);
+            padding-bottom: 80px; 
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.1); 
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 10px 20px;
+        }
+
+        /* --- 頂部導航列 --- */
+        .nav-scroller {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: transparent; 
+            box-shadow: none;
+            
+            /* 修改：往上移動 40px (原本 220px -> 180px) */
+            margin-top: 180px; 
+            padding: 10px 0;
+        }
+
+        .nav-list {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 5px 20px;
+            scrollbar-width: none; 
+            -ms-overflow-style: none;  
+        }
+        
+        .nav-list::-webkit-scrollbar { display: none; }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255,255,255,0.6);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 25px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-size: 0.95rem;
+            transition: 0.3s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .nav-btn.active {
+            background: var(--active-color);
+            border-color: var(--active-color);
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(255, 71, 87, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* --- 內容區塊 --- */
+        .section-view {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        
+        .section-view.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- 毛玻璃卡片 --- */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            border-radius: 16px;
+            box-shadow: var(--glass-shadow);
+            padding: 20px;
+            margin-bottom: 20px;
+            color: #fff;
+            position: relative; /* 為了定位刪除按鈕 */
+        }
+
+        /* --- 懸浮新增按鈕 --- */
+        .fab-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--active-color);
+            color: white;
+            border: none;
+            font-size: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            transition: transform 0.2s;
+        }
+        
+        .fab-btn:active { transform: scale(0.9); }
+
+        /* --- Modal 視窗 --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 300;
+            display: none; 
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            width: 85%;
+            max-width: 500px;
+            background: rgba(45, 52, 54, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 25px;
+            color: white;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #aaa;
+        }
+
+        /* --- 表單樣式 --- */
+        .input-form {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        input, select, button.add-btn {
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 1rem;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input, select { background: rgba(255, 255, 255, 0.9); color: #333; }
+
+        button.add-btn {
+            background-color: var(--accent-color);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* --- 行程卡片內容與照片牆 --- */
+        .trip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+            padding-right: 30px; /* 留位置給刪除按鈕 */
+        }
+
+        .trip-content {
+            display: flex;
+            flex-direction: column; /* 改為垂直排列，因為照片可能很多 */
+            gap: 10px;
+        }
+
+        /* 照片畫廊樣式 (最多4張) */
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .trip-img {
+            width: 100%;
+            height: 100px; /* 固定高度，整齊 */
+            object-fit: cover;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .trip-details h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.3rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .nav-btn-link {
+            text-decoration: none;
+            background: #4a90e2;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        /* --- 美化後的刪除按鈕 --- */
+        .delete-btn-icon {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 50%;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .delete-btn-icon:hover {
+            background: #ff4757;
+            transform: scale(1.1);
+        }
+
+        /* --- 匯率區塊 --- */
+        .currency-converter {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .currency-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .currency-group label {
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+            color: #eee;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255,255,255,0.8);
+            font-style: italic;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="overlay"></div>
+
+    <div class="nav-scroller">
+        <div class="nav-list">
+            <button class="nav-btn active" onclick="switchTab('currency')">💰 匯率計算</button>
+            <button class="nav-btn" onclick="switchTab('5/23 (六)')">5/23 (六)</button>
+            <button class="nav-btn" onclick="switchTab('5/24 (日)')">5/24 (日)</button>
+            <button class="nav-btn" onclick="switchTab('5/25 (一)')">5/25 (一)</button>
+            <button class="nav-btn" onclick="switchTab('5/26 (二)')">5/26 (二)</button>
+            <button class="nav-btn" onclick="switchTab('5/27 (三)')">5/27 (三)</button>
+            <button class="nav-btn" onclick="switchTab('5/28 (四)')">5/28 (四)</button>
+            <button class="nav-btn" onclick="switchTab('5/29 (五)')">5/29 (五)</button>
+            <button class="nav-btn" onclick="switchTab('5/30 (六)')">5/30 (六)</button>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div id="currency-view" class="section-view active">
+            <div class="glass-card">
+                <h3 style="margin-top:0; text-shadow: 0 1px 2px rgba(0,0,0,0.5);">💰 即時匯率 (JPY ↔ TWD)</h3>
+                <div class="currency-converter">
+                    <div class="currency-group">
+                        <label>日幣 (JPY)</label>
+                        <input type="number" id="jpyInput" placeholder="¥">
+                    </div>
+                    <div style="font-size: 1.5rem;">⇄</div>
+                    <div class="currency-group">
+                        <label>台幣 (TWD)</label>
+                        <input type="number" id="twdInput" placeholder="NT$">
+                    </div>
+                </div>
+                <p style="font-size: 0.8rem; margin-top: 10px; opacity: 0.8;">* 匯率設定：0.22</p>
+            </div>
+        </div>
+
+        <div id="itinerary-list-container"></div>
+
+    </div>
+
+    <button class="fab-btn" onclick="openModal()">＋</button>
+
+    <div id="addModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">×</span>
+            <h3 style="margin-top:0; text-align:center;">新增行程</h3>
+            <div class="input-form">
+                <div>
+                    <label style="font-size:0.9rem; color:#ccc;">日期</label>
+                    <select id="dateSelect">
+                        <option value="5/23 (六)">5/23 (六)</option>
+                        <option value="5/24 (日)">5/24 (日)</option>
+                        <option value="5/25 (一)">5/25 (一)</option>
+                        <option value="5/26 (二)">5/26 (二)</option>
+                        <option value="5/27 (三)">5/27 (三)</option>
+                        <option value="5/28 (四)">5/28 (四)</option>
+                        <option value="5/29 (五)">5/29 (五)</option>
+                        <option value="5/30 (六)">5/30 (六)</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.9rem; color:#ccc;">時間</label>
+                    <input type="time" id="timeInput" required>
+                </div>
+                <div>
+                    <input type="text" id="locationInput" placeholder="地點 / 活動名稱">
+                </div>
+                <div>
+                    <input type="text" id="mapLinkInput" placeholder="Google Maps 連結 (選填)">
+                </div>
+                <div>
+                    <label style="font-size:0.9rem; color:#ccc;">照片 (最多4張)</label>
+                    <input type="file" id="imgInput" accept="image/*" multiple>
+                </div>
+                <div>
+                    <button class="add-btn" onclick="addItinerary()">確認新增</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'currency'; 
+        const rate = 0.22; 
+
+        // 匯率
+        const jpyInput = document.getElementById('jpyInput');
+        const twdInput = document.getElementById('twdInput');
+        jpyInput.addEventListener('input', () => { twdInput.value = (jpyInput.value * rate).toFixed(0); });
+        twdInput.addEventListener('input', () => { jpyInput.value = (twdInput.value / rate).toFixed(0); });
+
+        // 切換分頁
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            const buttons = document.querySelectorAll('.nav-btn');
+            buttons.forEach(btn => {
+                if (btn.innerText.includes(tabName) || (tabName === 'currency' && btn.innerText.includes('匯率'))) {
+                    btn.classList.add('active');
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            const currencyView = document.getElementById('currency-view');
+            const listContainer = document.getElementById('itinerary-list-container');
+
+            if (tabName === 'currency') {
+                currencyView.style.display = 'block';
+                listContainer.style.display = 'none';
+            } else {
+                currencyView.style.display = 'block';
+                listContainer.style.display = 'block';
+                filterAndSortItinerary(tabName);
+            }
+        }
+
+        // 篩選並排序 (核心修改)
+        function filterAndSortItinerary(dateStr) {
+            const listContainer = document.getElementById('itinerary-list-container');
+            const items = Array.from(document.getElementsByClassName('trip-item-container'));
+            
+            // 1. 先隱藏所有元素
+            items.forEach(item => item.style.display = 'none');
+
+            // 2. 篩選出當前日期的元素
+            const currentItems = items.filter(item => item.dataset.date === dateStr);
+
+            // 3. 根據時間排序 (dataset.time)
+            currentItems.sort((a, b) => {
+                const timeA = a.dataset.time || "00:00";
+                const timeB = b.dataset.time || "00:00";
+                return timeA.localeCompare(timeB);
+            });
+
+            // 4. 重新插入 DOM 以呈現排序後順序
+            if (currentItems.length > 0) {
+                currentItems.forEach(item => {
+                    listContainer.appendChild(item); // 移動元素到最後，達成視覺排序
+                    item.style.display = 'block';
+                });
+            }
+
+            // 5. 空狀態處理
+            let emptyMsg = document.getElementById('empty-msg');
+            if (currentItems.length === 0) {
+                if (!emptyMsg) {
+                    emptyMsg = document.createElement('div');
+                    emptyMsg.id = 'empty-msg';
+                    emptyMsg.className = 'empty-state';
+                    listContainer.appendChild(emptyMsg);
+                }
+                emptyMsg.innerText = `${dateStr} 目前沒有行程，點擊右下角 ＋ 新增`;
+                emptyMsg.style.display = 'block';
+            } else {
+                if (emptyMsg) emptyMsg.style.display = 'none';
+            }
+        }
+
+        function openModal() {
+            document.getElementById('addModal').style.display = 'flex';
+            if (currentTab !== 'currency') {
+                document.getElementById('dateSelect').value = currentTab;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('addModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == document.getElementById('addModal')) closeModal();
+        }
+
+        // 新增行程
+        async function addItinerary() {
+            const date = document.getElementById('dateSelect').value;
+            const time = document.getElementById('timeInput').value;
+            const location = document.getElementById('locationInput').value;
+            const mapLink = document.getElementById('mapLinkInput').value;
+            const imgInput = document.getElementById('imgInput');
+
+            if (location === "") {
+                alert("請輸入地點！");
+                return;
+            }
+
+            // 處理多張圖片
+            let imagesHtml = '';
+            if (imgInput.files && imgInput.files.length > 0) {
+                const files = Array.from(imgInput.files).slice(0, 4); // 限制最多4張
+                
+                // 使用 Promise 等待所有圖片讀取完成
+                const imagePromises = files.map(file => {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(`<img src="${e.target.result}" class="trip-img">`);
+                        reader.readAsDataURL(file);
+                    });
+                });
+
+                const imgTags = await Promise.all(imagePromises);
+                imagesHtml = `<div class="photo-gallery">${imgTags.join('')}</div>`;
+            }
+
+            createCard(date, time, location, mapLink, imagesHtml);
+
+            // 清空表單
+            document.getElementById('locationInput').value = "";
+            document.getElementById('mapLinkInput').value = "";
+            document.getElementById('imgInput').value = "";
+            closeModal();
+
+            // 刷新顯示
+            if (currentTab !== date) {
+                switchTab(date);
+            } else {
+                filterAndSortItinerary(date);
+            }
+        }
+
+        function createCard(date, time, location, mapLink, imagesHtml) {
+            const list = document.getElementById('itinerary-list-container');
+            const container = document.createElement('div');
+            container.className = 'trip-item-container';
+            container.dataset.date = date; 
+            container.dataset.time = time; // 儲存時間用於排序
+            
+            const mapHtml = mapLink ? `<a href="${mapLink}" target="_blank" class="nav-btn-link">📍 導航</a>` : '';
+            const timeHtml = time ? `<span style="font-weight: bold; font-size:1.1rem; text-shadow:0 1px 2px rgba(0,0,0,0.5);">${time}</span>` : '';
+
+            container.innerHTML = `
+                <div class="glass-card trip-item">
+                    <div class="delete-btn-icon" onclick="removeCard(this)" title="刪除行程">✕</div>
+
+                    <div class="trip-header">
+                        <span style="font-size: 0.9rem; opacity:0.8;">${date}</span>
+                        ${timeHtml}
+                    </div>
+                    <div class="trip-content">
+                        ${imagesHtml} <div class="trip-details">
+                            <h3>${location}</h3>
+                            <div style="margin-top:8px;">
+                                ${mapHtml}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            list.appendChild(container);
+        }
+
+        function removeCard(btn) {
+            if(confirm('確定要刪除這個行程嗎？')) {
+                const item = btn.closest('.trip-item-container');
+                item.remove();
+                filterAndSortItinerary(currentTab); 
+            }
+        }
+    </script>
+</body>
+</html>
